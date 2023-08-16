@@ -1,0 +1,47 @@
+html {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    height: 100%;
+    display: grid;
+    grid-template-areas: 
+        "header header header"
+        "menu main main"
+        "menu main main";
+    grid-template-rows: 64px auto auto;
+    grid-template-columns: 20% auto auto;
+}
+
+header {
+    grid-area: header;
+    border-bottom: 1px solid black;
+    display: flex;
+    align-items: center;
+    padding: 0 25px;
+}
+
+aside {
+    grid-area: menu;
+    border-right: 1px solid black;
+    padding: 0 25px;
+}
+
+main {
+    grid-area: main;
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+}
+
+.load-section {
+    height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    border: 1px dashed black;
+}

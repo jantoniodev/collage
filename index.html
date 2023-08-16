@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collage</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <h1>Collage</h1>
+    </header>
+    <aside>
+        <section>
+            <h3>Imagenes</h3>
+            <div class="load-section">
+                Upload images
+                <button id="upload-image">Upload</button>
+            </div>
+        </section>
+        <section>
+            <h3>Objetos</h3>
+            <div class="load-section">
+                Upload objects
+                <button>Upload</button>
+            </div>
+        </section>
+        <section>
+            <h3>Opciones</h3>
+            <button id="download-button">Descargar</button>
+        </section>
+    </aside>
+    <main>
+        <div id="container"></div>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
