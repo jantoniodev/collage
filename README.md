@@ -1,0 +1,3 @@
+# Collage
+
+Generador de collages
