@@ -1,4 +1,5 @@
 import Konva from 'konva'
+import backgroundRemoval from '@imgly/background-removal'
 
 const FRAME_WIDTH = 40
 
@@ -61,7 +62,7 @@ const handleUploadPhoto = async () => {
 
 const handleUploadObject = async () => {
     const files = await selectFiles()
-    const removedBackgroundFiles = await removeBackground(files)
+    const removedBackgroundFiles = await Promise.all(removeBackground(files))
     const images = await Promise.all(createImages(removedBackgroundFiles))
     addImages(images, false)
 }
@@ -71,9 +72,9 @@ const selectFiles = async () => {
     return await Promise.all(fileHandlers.map(handler => handler.getFile()))
 }
 
-const createImages = (files: File[]): Promise<HTMLImageElement>[] => {
+const createImages = (files: File[]) => {
     return files.map(file => {
-        return new Promise((resolve) => {
+        return new Promise<HTMLImageElement>((resolve) => {
             const image = new Image()
             image.onload = () => resolve(image)
             image.src = URL.createObjectURL(file)
@@ -127,7 +128,17 @@ const addImages = (images: HTMLImageElement[], withFrame: boolean = true) => {
 }
 
 const removeBackground = (files: File[]) => {
-    return Promise.resolve(files)
+    return files.map(async file => {
+        return new Promise<File>((resolve, reject) => {
+            backgroundRemoval(file)
+                .then((blob) => {
+                    resolve(new File([blob], file.name))
+                })
+                .catch((error) => {
+                    reject(error)
+                })
+        })
+    })
 }
 
 const handleImageClick = (image: Konva.Group) => {
