@@ -1,4 +1,5 @@
 import Konva from 'konva'
+import backgroundRemoval from '@imgly/background-removal'
 
 const FRAME_WIDTH = 40
 
@@ -30,7 +31,9 @@ stage.on('click', (event) => {
     }
 })
 
-const uploadImageButton = document.getElementById('upload-image')
+const uploadPhotoButton = document.getElementById('upload-fotos')
+const uploadObjectButton = document.getElementById('upload-object')
+const uploadObjectProgress = document.getElementById('upload-object-progress')
 const downloadButton = document.getElementById('download-button')
 
 downloadButton?.addEventListener('click', () => {
@@ -44,53 +47,113 @@ downloadButton?.addEventListener('click', () => {
     link.click()
 })
 
-uploadImageButton?.addEventListener('click', async () => {
-    const fileHandlers = await window.showOpenFilePicker({ multiple: true })
-    const files = await Promise.all(fileHandlers.map(handler => handler.getFile()))
-
-    files.map(file => {
-        const image = new Image()
-        image.onload = () => handleImageLoad(image)
-        image.src = URL.createObjectURL(file)
-    })
+uploadPhotoButton?.addEventListener('click', async () => {
+    handleUploadPhoto()
 })
 
-const handleImageLoad = (image: HTMLImageElement) => {
-    const group = new Konva.Group({
-        draggable: true,
+uploadObjectButton?.addEventListener('click', async () => {
+    handleUploadObject()
+})
+
+const handleUploadPhoto = async () => {
+    const files = await selectFiles()
+    const images = await createImages(files)
+    addImages(images)
+}
+
+const handleUploadObject = async () => {
+    const files = await selectFiles()
+    toggleLoading()
+    const removedBackgroundFiles = await removeBackground(files)
+    const images = await createImages(removedBackgroundFiles)
+    addImages(images, false)
+    toggleLoading()
+}
+
+const selectFiles = async () => {
+    const fileHandlers = await window.showOpenFilePicker({ multiple: true })
+    return await Promise.all(fileHandlers.map(handler => handler.getFile()))
+}
+
+const createImages = (files: File[]) => {
+    return Promise.all(files.map(file => {
+        return new Promise<HTMLImageElement>((resolve) => {
+            const image = new Image()
+            image.onload = () => resolve(image)
+            image.src = URL.createObjectURL(file)
+        })
+    }))
+}
+
+const addImages = (images: HTMLImageElement[], withFrame: boolean = true) => {
+    images.forEach((image) => {
+        const group = new Konva.Group({
+            draggable: true,
+        })
+    
+        const imageWidth = image.naturalWidth * 0.1
+        const imageHeight = image.naturalHeight * 0.1
+    
+        const konvaImage = new Konva.Image({
+            x: 0,
+            y: 0,
+            image,
+            width: imageWidth,
+            height: imageHeight,
+        })
+    
+        group.addEventListener('click', () => {
+            handleImageClick(group)
+        })
+    
+        if (withFrame) {
+            const imageFrame = new Konva.Rect({
+                x: 0,
+                y: 0,
+                width: imageWidth + FRAME_WIDTH,
+                height: imageHeight + FRAME_WIDTH,
+                shadowColor: '#000',
+                shadowOpacity: 0.25,
+                shadowBlur: 4,
+                shadowOffset: { x: 2, y: 5 },
+                fill: '#FFF',
+            })
+
+            konvaImage.x((imageFrame.width() / 2) - (imageWidth / 2))
+            konvaImage.y((imageFrame.height() / 2 - (imageHeight / 2)))
+
+            group.add(imageFrame)
+        }
+        group.add(konvaImage)
+        layer.add(group)
+        layer.draw()
     })
+}
 
-    const imageWidth = image.naturalWidth * 0.1
-    const imageHeight = image.naturalHeight * 0.1
+const removeBackground = (files: File[]) => {
+    return Promise.all(files.map(async file => {
+        const blob = await backgroundRemoval(file, { progress: handleProgress })
+        return new File([blob], file.name)
+    }))
+}
 
-    const imageFrame = new Konva.Rect({
-        x: 0,
-        y: 0,
-        width: imageWidth + FRAME_WIDTH,
-        height: imageHeight + FRAME_WIDTH,
-        shadowColor: '#000',
-        shadowOpacity: 0.25,
-        shadowBlur: 4,
-        shadowOffset: { x: 2, y: 5 },
-        fill: '#FFF',
-    })
+const toggleLoading = () => {
+    uploadObjectProgress?.classList.toggle('invisible')
+    uploadObjectButton?.classList.toggle('invisible')
+}
 
-    const konvaImage = new Konva.Image({
-        x: (imageFrame.width() / 2) - (imageWidth / 2),
-        y: (imageFrame.height() / 2 - (imageHeight / 2)),
-        image,
-        width: imageWidth,
-        height: imageHeight,
-    })
+const handleProgress = (key: string, current: number, total: number) => {
+    const action = key.split(':')[0]
 
-    group.addEventListener('click', () => {
-        handleImageClick(group)
-    })
+    const percentage = Math.round(current / total * 100)
 
-    group.add(imageFrame)
-    group.add(konvaImage)
-    layer.add(group)
-    layer.draw()
+    if (uploadObjectProgress) {
+        if (action === 'compute') {
+            uploadObjectProgress.innerText = `Eliminando el fondo`
+        } else {
+            uploadObjectProgress.innerText = `${percentage}%`
+        }
+    }
 }
 
 const handleImageClick = (image: Konva.Group) => {
