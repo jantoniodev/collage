@@ -33,6 +33,7 @@ stage.on('click', (event) => {
 
 const uploadPhotoButton = document.getElementById('upload-fotos')
 const uploadObjectButton = document.getElementById('upload-object')
+const uploadObjectProgress = document.getElementById('upload-object-progress')
 const downloadButton = document.getElementById('download-button')
 
 downloadButton?.addEventListener('click', () => {
@@ -62,9 +63,11 @@ const handleUploadPhoto = async () => {
 
 const handleUploadObject = async () => {
     const files = await selectFiles()
+    toggleLoading()
     const removedBackgroundFiles = await removeBackground(files)
     const images = await createImages(removedBackgroundFiles)
     addImages(images, false)
+    toggleLoading()
 }
 
 const selectFiles = async () => {
@@ -129,9 +132,28 @@ const addImages = (images: HTMLImageElement[], withFrame: boolean = true) => {
 
 const removeBackground = (files: File[]) => {
     return Promise.all(files.map(async file => {
-        const blob = await backgroundRemoval(file)
+        const blob = await backgroundRemoval(file, { progress: handleProgress })
         return new File([blob], file.name)
     }))
+}
+
+const toggleLoading = () => {
+    uploadObjectProgress?.classList.toggle('invisible')
+    uploadObjectButton?.classList.toggle('invisible')
+}
+
+const handleProgress = (key: string, current: number, total: number) => {
+    const action = key.split(':')[0]
+
+    const percentage = Math.round(current / total * 100)
+
+    if (uploadObjectProgress) {
+        if (action === 'compute') {
+            uploadObjectProgress.innerText = `Eliminando el fondo`
+        } else {
+            uploadObjectProgress.innerText = `${percentage}%`
+        }
+    }
 }
 
 const handleImageClick = (image: Konva.Group) => {

@@ -45,3 +45,11 @@ canvas {
     flex-direction: column;
     border: 1px dashed black;
 }
+
+.visible {
+    display: initial;
+}
+
+.invisible {
+    display: none;
+}
