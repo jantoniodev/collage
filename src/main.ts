@@ -30,7 +30,8 @@ stage.on('click', (event) => {
     }
 })
 
-const uploadImageButton = document.getElementById('upload-image')
+const uploadPhotoButton = document.getElementById('upload-fotos')
+const uploadObjectButton = document.getElementById('upload-object')
 const downloadButton = document.getElementById('download-button')
 
 downloadButton?.addEventListener('click', () => {
@@ -44,53 +45,89 @@ downloadButton?.addEventListener('click', () => {
     link.click()
 })
 
-uploadImageButton?.addEventListener('click', async () => {
-    const fileHandlers = await window.showOpenFilePicker({ multiple: true })
-    const files = await Promise.all(fileHandlers.map(handler => handler.getFile()))
-
-    files.map(file => {
-        const image = new Image()
-        image.onload = () => handleImageLoad(image)
-        image.src = URL.createObjectURL(file)
-    })
+uploadPhotoButton?.addEventListener('click', async () => {
+    handleUploadPhoto()
 })
 
-const handleImageLoad = (image: HTMLImageElement) => {
-    const group = new Konva.Group({
-        draggable: true,
+uploadObjectButton?.addEventListener('click', async () => {
+    handleUploadObject()
+})
+
+const handleUploadPhoto = async () => {
+    const files = await selectFiles()
+    const images = await Promise.all(createImages(files))
+    addImages(images)
+}
+
+const handleUploadObject = async () => {
+    const files = await selectFiles()
+    const removedBackgroundFiles = await removeBackground(files)
+    const images = await Promise.all(createImages(removedBackgroundFiles))
+    addImages(images, false)
+}
+
+const selectFiles = async () => {
+    const fileHandlers = await window.showOpenFilePicker({ multiple: true })
+    return await Promise.all(fileHandlers.map(handler => handler.getFile()))
+}
+
+const createImages = (files: File[]): Promise<HTMLImageElement>[] => {
+    return files.map(file => {
+        return new Promise((resolve) => {
+            const image = new Image()
+            image.onload = () => resolve(image)
+            image.src = URL.createObjectURL(file)
+        })
     })
+}
 
-    const imageWidth = image.naturalWidth * 0.1
-    const imageHeight = image.naturalHeight * 0.1
+const addImages = (images: HTMLImageElement[], withFrame: boolean = true) => {
+    images.forEach((image) => {
+        const group = new Konva.Group({
+            draggable: true,
+        })
+    
+        const imageWidth = image.naturalWidth * 0.1
+        const imageHeight = image.naturalHeight * 0.1
+    
+        const konvaImage = new Konva.Image({
+            x: 0,
+            y: 0,
+            image,
+            width: imageWidth,
+            height: imageHeight,
+        })
+    
+        group.addEventListener('click', () => {
+            handleImageClick(group)
+        })
+    
+        if (withFrame) {
+            const imageFrame = new Konva.Rect({
+                x: 0,
+                y: 0,
+                width: imageWidth + FRAME_WIDTH,
+                height: imageHeight + FRAME_WIDTH,
+                shadowColor: '#000',
+                shadowOpacity: 0.25,
+                shadowBlur: 4,
+                shadowOffset: { x: 2, y: 5 },
+                fill: '#FFF',
+            })
 
-    const imageFrame = new Konva.Rect({
-        x: 0,
-        y: 0,
-        width: imageWidth + FRAME_WIDTH,
-        height: imageHeight + FRAME_WIDTH,
-        shadowColor: '#000',
-        shadowOpacity: 0.25,
-        shadowBlur: 4,
-        shadowOffset: { x: 2, y: 5 },
-        fill: '#FFF',
+            konvaImage.x((imageFrame.width() / 2) - (imageWidth / 2))
+            konvaImage.y((imageFrame.height() / 2 - (imageHeight / 2)))
+
+            group.add(imageFrame)
+        }
+        group.add(konvaImage)
+        layer.add(group)
+        layer.draw()
     })
+}
 
-    const konvaImage = new Konva.Image({
-        x: (imageFrame.width() / 2) - (imageWidth / 2),
-        y: (imageFrame.height() / 2 - (imageHeight / 2)),
-        image,
-        width: imageWidth,
-        height: imageHeight,
-    })
-
-    group.addEventListener('click', () => {
-        handleImageClick(group)
-    })
-
-    group.add(imageFrame)
-    group.add(konvaImage)
-    layer.add(group)
-    layer.draw()
+const removeBackground = (files: File[]) => {
+    return Promise.resolve(files)
 }
 
 const handleImageClick = (image: Konva.Group) => {
