@@ -1,3 +1,3 @@
-# Collage
+# Vision Board
 
-Generador de collages
+Generador de Vision Board
