@@ -3,19 +3,28 @@ import backgroundRemoval from '@imgly/background-removal'
 
 const FRAME_WIDTH = 40
 
+const ratio = 0.7
+const canvasWidth = 1440 * ratio
+const canvasHeight = 900 * ratio
+
 const stage = new Konva.Stage({
     container: 'container',
     width: 1152,
     height: 719,
 })
 
-const layer = new Konva.Layer()
+const layer = new Konva.Layer({
+    x: (stage.width() / 2) - (canvasWidth / 2),
+    y: (stage.height() / 2) - (canvasHeight / 2),
+    width: canvasWidth,
+    height: canvasHeight,
+})
 const transformer = new Konva.Transformer()
 const background = new Konva.Rect({
     x: 0,
     y: 0,
-    width: stage.width(),
-    height: stage.height(),
+    width: canvasWidth,
+    height: canvasHeight,
     fill: '#8598A9',
     listening: false,
 })
@@ -38,11 +47,22 @@ const downloadButton = document.getElementById('download-button')
 
 downloadButton?.addEventListener('click', () => {
     const imageDataUrl = stage.toDataURL({
-        pixelRatio: 2
+        mimeType: 'image/jpeg',
+        x: layer.x(),
+        y: layer.y(),
+        width: canvasWidth,
+        height: canvasHeight,
+        quality: 1,
+        /*
+            La expresión para pixel ratio se puede simplificar matemáticamente como 1 / ratio
+            pero al hacerlo así existe un problema de redondeo en la resolución final con la que se exporta la imágen
+            por lo tanto se deja de la forma completa.
+        */
+        pixelRatio: (canvasWidth / ratio) / canvasWidth,
     })
 
     const link = document.createElement('a')
-    link.download = 'background.png'
+    link.download = 'background.jpeg'
     link.href = imageDataUrl
     link.click()
 })
