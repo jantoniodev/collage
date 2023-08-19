@@ -3,19 +3,36 @@ import backgroundRemoval from '@imgly/background-removal'
 
 const FRAME_WIDTH = 40
 
+const resolution = {
+    width: 1440,
+    height: 900,
+}
+
+const zoom = 0.7
+
+const getResolution = () => {
+    return {
+        width: resolution.width * zoom,
+        height: resolution.height * zoom,
+    }
+}
+
 const stage = new Konva.Stage({
     container: 'container',
     width: 1152,
     height: 719,
 })
 
-const layer = new Konva.Layer()
+const layer = new Konva.Layer({
+    x: (stage.width() / 2) - (getResolution().width / 2),
+    y: (stage.height() / 2) - (getResolution().height / 2),
+})
 const transformer = new Konva.Transformer()
 const background = new Konva.Rect({
     x: 0,
     y: 0,
-    width: stage.width(),
-    height: stage.height(),
+    width: getResolution().width,
+    height: getResolution().height,
     fill: '#8598A9',
     listening: false,
 })
@@ -35,14 +52,32 @@ const uploadPhotoButton = document.getElementById('upload-fotos')
 const uploadObjectButton = document.getElementById('upload-object')
 const uploadObjectProgress = document.getElementById('upload-object-progress')
 const downloadButton = document.getElementById('download-button')
+const resolutionSelect = document.getElementById('resolution-select')
+
+resolutionSelect?.addEventListener('change', (event) => {
+    const selectElement = event.target as HTMLSelectElement
+    const [selectedWidth, selectedHeight] = selectElement.value.split('x').map(e => parseInt(e))
+    resizeWorkspace(selectedWidth, selectedHeight)
+})
 
 downloadButton?.addEventListener('click', () => {
     const imageDataUrl = stage.toDataURL({
-        pixelRatio: 2
+        mimeType: 'image/jpeg',
+        x: layer.x(),
+        y: layer.y(),
+        width: background.width(),
+        height: background.height(),
+        quality: 1,
+        /*
+            La expresión para pixel ratio se puede simplificar matemáticamente como 1 / ratio
+            pero al hacerlo así existe un problema de redondeo en la resolución final con la que se exporta la imágen
+            por lo tanto se deja de la forma completa.
+        */
+        pixelRatio: (background.width() / zoom) / background.width(),
     })
 
     const link = document.createElement('a')
-    link.download = 'background.png'
+    link.download = 'background.jpeg'
     link.href = imageDataUrl
     link.click()
 })
@@ -158,4 +193,15 @@ const handleProgress = (key: string, current: number, total: number) => {
 
 const handleImageClick = (image: Konva.Group) => {
     transformer.setNodes([image])
+}
+
+const resizeWorkspace = (width: number, height: number) => {
+    resolution.width = width,
+    resolution.height = height
+
+    layer.x((stage.width() / 2) - (getResolution().width / 2))
+    layer.y((stage.height() / 2) - (getResolution().height / 2))
+
+    background.width(getResolution().width)
+    background.height(getResolution().height)
 }
