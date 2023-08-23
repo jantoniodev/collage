@@ -121,48 +121,33 @@ const createImages = (files: File[]) => {
 }
 
 const addImages = (images: HTMLImageElement[], withFrame: boolean = true) => {
+    const createdImages: Konva.Node[] = []
     images.forEach((image) => {
-        const group = new Konva.Group({
+        const aspectRatio = image.naturalWidth / image.naturalHeight
+    
+        const konvaImage = new Konva.Image({
+            x: (getResolution().width / 2) - ((getResolution().height / 2) * aspectRatio / 2),
+            y: (getResolution().height / 2) - ((getResolution().height / 2) / 2),
+            image,
+            width: (getResolution().height / 2) * aspectRatio,
+            height: getResolution().height / 2,
+            rotation: Math.random() * 4 - 2,
             draggable: true,
         })
     
-        const imageWidth = image.naturalWidth * 0.1
-        const imageHeight = image.naturalHeight * 0.1
-    
-        const konvaImage = new Konva.Image({
-            x: 0,
-            y: 0,
-            image,
-            width: imageWidth,
-            height: imageHeight,
-        })
-    
-        group.addEventListener('click', () => {
-            handleImageClick(group)
+        konvaImage.addEventListener('click', () => {
+            handleImageClick(konvaImage)
         })
     
         if (withFrame) {
-            const imageFrame = new Konva.Rect({
-                x: 0,
-                y: 0,
-                width: imageWidth + FRAME_WIDTH,
-                height: imageHeight + FRAME_WIDTH,
-                shadowColor: '#000',
-                shadowOpacity: 0.25,
-                shadowBlur: 4,
-                shadowOffset: { x: 2, y: 5 },
-                fill: '#FFF',
-            })
-
-            konvaImage.x((imageFrame.width() / 2) - (imageWidth / 2))
-            konvaImage.y((imageFrame.height() / 2 - (imageHeight / 2)))
-
-            group.add(imageFrame)
+            konvaImage.stroke('#FFF')
+            konvaImage.strokeWidth(FRAME_WIDTH)
         }
-        group.add(konvaImage)
-        layer.add(group)
+        
+        layer.add(konvaImage)
         layer.draw()
     })
+    return createdImages
 }
 
 const removeBackground = (files: File[]) => {
@@ -191,7 +176,7 @@ const handleProgress = (key: string, current: number, total: number) => {
     }
 }
 
-const handleImageClick = (image: Konva.Group) => {
+const handleImageClick = (image: Konva.Node) => {
     transformer.setNodes([image])
 }
 
