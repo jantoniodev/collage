@@ -10,8 +10,6 @@ const resolution = {
 
 const zoom = 0.7
 
-const loadedImages: Konva.Node[] = []
-
 const getResolution = () => {
     return {
         width: resolution.width * zoom,
@@ -95,9 +93,7 @@ uploadObjectButton?.addEventListener('click', async () => {
 const handleUploadPhoto = async () => {
     const files = await selectFiles()
     const images = await createImages(files)
-    const createdImages = addImages(images)
-    loadedImages.push(...createdImages)
-    arrangeImages(loadedImages)
+    addImages(images)
 }
 
 const handleUploadObject = async () => {
@@ -127,48 +123,29 @@ const createImages = (files: File[]) => {
 const addImages = (images: HTMLImageElement[], withFrame: boolean = true) => {
     const createdImages: Konva.Node[] = []
     images.forEach((image) => {
-        const group = new Konva.Group({
+        const aspectRatio = image.naturalWidth / image.naturalHeight
+    
+        const konvaImage = new Konva.Image({
+            x: (getResolution().width / 2) - ((getResolution().height / 2) * aspectRatio / 2),
+            y: (getResolution().height / 2) - ((getResolution().height / 2) / 2),
+            image,
+            width: (getResolution().height / 2) * aspectRatio,
+            height: getResolution().height / 2,
+            rotation: Math.random() * 4 - 2,
             draggable: true,
         })
     
-        const imageWidth = image.naturalWidth * 0.1
-        const imageHeight = image.naturalHeight * 0.1
-    
-        const konvaImage = new Konva.Image({
-            x: 0,
-            y: 0,
-            image,
-            width: imageWidth,
-            height: imageHeight,
-        })
-    
-        group.addEventListener('click', () => {
-            handleImageClick(group)
+        konvaImage.addEventListener('click', () => {
+            handleImageClick(konvaImage)
         })
     
         if (withFrame) {
-            const imageFrame = new Konva.Rect({
-                x: 0,
-                y: 0,
-                width: imageWidth + FRAME_WIDTH,
-                height: imageHeight + FRAME_WIDTH,
-                shadowColor: '#000',
-                shadowOpacity: 0.25,
-                shadowBlur: 4,
-                shadowOffset: { x: 2, y: 5 },
-                fill: '#FFF',
-            })
-
-            konvaImage.x((imageFrame.width() / 2) - (imageWidth / 2))
-            konvaImage.y((imageFrame.height() / 2 - (imageHeight / 2)))
-
-            group.add(imageFrame)
+            konvaImage.stroke('#FFF')
+            konvaImage.strokeWidth(FRAME_WIDTH)
         }
-        group.add(konvaImage)
-        layer.add(group)
+        
+        layer.add(konvaImage)
         layer.draw()
-
-        createdImages.push(group)
     })
     return createdImages
 }
@@ -199,37 +176,7 @@ const handleProgress = (key: string, current: number, total: number) => {
     }
 }
 
-const arrangeImages = (images: Konva.Node[]) => {
-    const rows = Math.ceil(Math.sqrt(images.length))
-    const columns = Math.ceil(images.length / rows)
-
-    const subdivisionSize = {
-        width: Math.round(getResolution().width / rows),
-        height: Math.round(getResolution().height / columns),
-    }
-
-    images.forEach((image, index) => {
-        // Cambiar el tamaño
-        const { width, height } = image.getClientRect()
-        
-        const aspectRatio = width / height
-
-        image.scale({
-            x: subdivisionSize.height * aspectRatio / width,
-            y: subdivisionSize.height / height
-        })
-
-        // Posicionar imagenes
-        image.x(((index % rows) * subdivisionSize.width) + (subdivisionSize.width / 2) - (image.getClientRect().width / 2))
-        image.y((Math.floor(index / rows) * subdivisionSize.height) + (subdivisionSize.height / 2) - (image.getClientRect().height / 2))
-
-        // Rotar aleatoriamente las imagenes
-        const randomRotation = Math.random() * 4 - 2
-        image.rotate(randomRotation)
-    })
-}
-
-const handleImageClick = (image: Konva.Group) => {
+const handleImageClick = (image: Konva.Node) => {
     transformer.setNodes([image])
 }
 
