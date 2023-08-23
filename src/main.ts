@@ -10,6 +10,8 @@ const resolution = {
 
 const zoom = 0.7
 
+const loadedImages: Konva.Node[] = []
+
 const getResolution = () => {
     return {
         width: resolution.width * zoom,
@@ -93,7 +95,9 @@ uploadObjectButton?.addEventListener('click', async () => {
 const handleUploadPhoto = async () => {
     const files = await selectFiles()
     const images = await createImages(files)
-    addImages(images)
+    const createdImages = addImages(images)
+    loadedImages.push(...createdImages)
+    arrangeImages(loadedImages)
 }
 
 const handleUploadObject = async () => {
@@ -121,6 +125,7 @@ const createImages = (files: File[]) => {
 }
 
 const addImages = (images: HTMLImageElement[], withFrame: boolean = true) => {
+    const createdImages: Konva.Node[] = []
     images.forEach((image) => {
         const group = new Konva.Group({
             draggable: true,
@@ -162,7 +167,10 @@ const addImages = (images: HTMLImageElement[], withFrame: boolean = true) => {
         group.add(konvaImage)
         layer.add(group)
         layer.draw()
+
+        createdImages.push(group)
     })
+    return createdImages
 }
 
 const removeBackground = (files: File[]) => {
@@ -189,6 +197,36 @@ const handleProgress = (key: string, current: number, total: number) => {
             uploadObjectProgress.innerText = `${percentage}%`
         }
     }
+}
+
+const arrangeImages = (images: Konva.Node[]) => {
+    const rows = Math.ceil(Math.sqrt(images.length))
+    const columns = Math.ceil(images.length / rows)
+
+    const subdivisionSize = {
+        width: Math.round(getResolution().width / rows),
+        height: Math.round(getResolution().height / columns),
+    }
+
+    images.forEach((image, index) => {
+        // Cambiar el tamaño
+        const { width, height } = image.getClientRect()
+        
+        const aspectRatio = width / height
+
+        image.scale({
+            x: subdivisionSize.height * aspectRatio / width,
+            y: subdivisionSize.height / height
+        })
+
+        // Posicionar imagenes
+        image.x(((index % rows) * subdivisionSize.width) + (subdivisionSize.width / 2) - (image.getClientRect().width / 2))
+        image.y((Math.floor(index / rows) * subdivisionSize.height) + (subdivisionSize.height / 2) - (image.getClientRect().height / 2))
+
+        // Rotar aleatoriamente las imagenes
+        const randomRotation = Math.random() * 4 - 2
+        image.rotate(randomRotation)
+    })
 }
 
 const handleImageClick = (image: Konva.Group) => {
