@@ -90,6 +90,13 @@ uploadObjectButton?.addEventListener('click', async () => {
     handleUploadObject()
 })
 
+window.addEventListener('keydown', (event) => {
+    const keyCode = event.code
+    if (keyCode === 'Backspace') {
+        handleDeleteSelectedImages()
+    }
+})
+
 const handleUploadPhoto = async () => {
     const files = await selectFiles()
     const images = await createImages(files)
@@ -178,6 +185,12 @@ const handleProgress = (key: string, current: number, total: number) => {
 
 const handleImageClick = (image: Konva.Node) => {
     transformer.setNodes([image])
+}
+
+const handleDeleteSelectedImages = () => {
+    const selectedNodes = transformer.getNodes()
+    selectedNodes.forEach(node => node.destroy())
+    transformer.setNodes([])
 }
 
 const resizeWorkspace = (width: number, height: number) => {
