@@ -57,6 +57,7 @@ const uploadObjectButton = document.getElementById('upload-object')
 const uploadObjectProgress = document.getElementById('upload-object-progress')
 const downloadButton = document.getElementById('download-button')
 const resolutionSelect = document.getElementById('resolution-select')
+const backgroundColorSelect = document.getElementById('background-color-select')
 
 resolutionSelect?.addEventListener('change', (event) => {
     const selectElement = event.target as HTMLSelectElement
@@ -92,6 +93,11 @@ uploadPhotoButton?.addEventListener('click', async () => {
 
 uploadObjectButton?.addEventListener('click', async () => {
     handleUploadObject()
+})
+
+backgroundColorSelect?.addEventListener('input', (event) => {
+    const target = event.target as HTMLInputElement
+    background.fill(target.value)
 })
 
 window.addEventListener('keydown', (event) => {
