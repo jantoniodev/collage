@@ -23,10 +23,12 @@ const stage = new Konva.Stage({
     height: 719,
 })
 
+const backLayer = new Konva.Layer()
 const layer = new Konva.Layer({
     x: (stage.width() / 2) - (getResolution().width / 2),
     y: (stage.height() / 2) - (getResolution().height / 2),
 })
+
 const transformer = new Konva.Transformer()
 const background = new Konva.Rect({
     x: 0,
@@ -38,8 +40,10 @@ const background = new Konva.Rect({
 })
 
 layer.add(background)
-layer.add(transformer)
 stage.add(layer)
+
+backLayer.add(transformer)
+stage.add(backLayer)
 
 // Elimina imagenes seleccionadas cuando se haga click en imagenes vacias
 stage.on('click', (event) => {
@@ -184,6 +188,7 @@ const handleProgress = (key: string, current: number, total: number) => {
 }
 
 const handleImageClick = (image: Konva.Node) => {
+    image.moveToTop()
     transformer.setNodes([image])
 }
 
