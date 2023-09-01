@@ -9,6 +9,8 @@ const resolution = {
 }
 
 const zoom = 0.7
+let currentColorFrame = '#FFF'
+let currentFrameWidth = FRAME_WIDTH
 
 const getResolution = () => {
     return {
@@ -58,6 +60,8 @@ const uploadObjectProgress = document.getElementById('upload-object-progress')
 const downloadButton = document.getElementById('download-button')
 const resolutionSelect = document.getElementById('resolution-select')
 const backgroundColorSelect = document.getElementById('background-color-select')
+const frameColorSelect = document.getElementById('frame-color-select')
+const frameWidthRange = document.getElementById('frame-width-range')
 
 resolutionSelect?.addEventListener('change', (event) => {
     const selectElement = event.target as HTMLSelectElement
@@ -107,10 +111,22 @@ window.addEventListener('keydown', (event) => {
     }
 })
 
+frameColorSelect?.addEventListener('input', (event) => {
+    const target = event.target as HTMLInputElement
+    currentColorFrame = target.value
+    changeEveryPhotoFrameColor(target.value)
+})
+
+frameWidthRange?.addEventListener('input', (event) => {
+    const target = event.target as HTMLInputElement
+    currentFrameWidth = parseInt(target.value)
+    changeEveryPhotoFrameWidth(currentFrameWidth)
+})
+
 const handleUploadPhoto = async () => {
     const files = await selectFiles()
     const images = await createImages(files)
-    addImages(images)
+    addImages(images, true)
 }
 
 const handleUploadObject = async () => {
@@ -157,9 +173,11 @@ const addImages = (images: HTMLImageElement[], withFrame: boolean = true) => {
         })
     
         if (withFrame) {
-            konvaImage.stroke('#FFF')
-            konvaImage.strokeWidth(FRAME_WIDTH)
+            konvaImage.stroke(currentColorFrame)
+            konvaImage.strokeWidth(currentFrameWidth)
         }
+
+        (konvaImage as any)['type'] = withFrame ? 'photo' : 'object'
         
         layer.add(konvaImage)
         layer.draw()
@@ -213,4 +231,21 @@ const resizeWorkspace = (width: number, height: number) => {
 
     background.width(getResolution().width)
     background.height(getResolution().height)
+}
+
+const changeEveryPhotoFrameColor = (color: string) => {
+    const images = layer.find<Konva.Image>('Image')
+    images.forEach((image) => {
+        image.stroke(color)
+    })
+    layer.draw()
+}
+
+const changeEveryPhotoFrameWidth = (width: number = 0) => {
+    const images = layer.find<Konva.Image>('Image')
+    images.forEach((image) => {
+        const imageType = (image as any)['type'] || 'photo'
+        image.strokeWidth(imageType === 'photo' ? width : 0)
+    })
+    layer.draw()
 }
