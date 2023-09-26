@@ -8,7 +8,9 @@ const resolution = {
     height: 900,
 }
 
-const zoom = 0.7
+const originalZoom = 0.7
+
+let zoom = originalZoom
 let currentColorFrame = '#FFF'
 let currentFrameWidth = FRAME_WIDTH
 
@@ -23,6 +25,7 @@ const stage = new Konva.Stage({
     container: 'container',
     width: 1152,
     height: 719,
+    draggable: true,
 })
 
 const backLayer = new Konva.Layer()
@@ -70,6 +73,8 @@ resolutionSelect?.addEventListener('change', (event) => {
 })
 
 downloadButton?.addEventListener('click', () => {
+    resetStagePosition()
+    
     const imageDataUrl = stage.toDataURL({
         mimeType: 'image/jpeg',
         x: layer.x(),
@@ -84,7 +89,7 @@ downloadButton?.addEventListener('click', () => {
         */
         pixelRatio: (background.width() / zoom) / background.width(),
     })
-
+    
     const link = document.createElement('a')
     link.download = 'background.jpeg'
     link.href = imageDataUrl
@@ -249,3 +254,43 @@ const changeEveryPhotoFrameWidth = (width: number = 0) => {
     })
     layer.draw()
 }
+
+const resetStagePosition = () => {
+    zoom = originalZoom
+    stage.position({
+        x: 0,
+        y: 0,
+    })
+    stage.scale({
+        x: 1,
+        y: 1,
+    })
+    stage.batchDraw()
+}
+
+const handleZoomScaleEvent = (event: Event) => {
+    const wheelEvent = event as WheelEvent
+    
+    if (wheelEvent.ctrlKey) {
+        const oldZoom = zoom
+        zoom += wheelEvent.deltaY * -0.001
+        zoom = Math.min(Math.max(0.1, zoom), 5)
+        const mousePointTo = {
+            x: (stage.getPointerPosition()?.x || 0) / oldZoom - stage.x() / oldZoom,
+            y: (stage.getPointerPosition()?.y || 0) / oldZoom - stage.y() / oldZoom,
+        }
+        const newScale = {
+            x: zoom,
+            y: zoom,
+        }
+        const newPos = {
+            x: -(mousePointTo.x - (stage.getPointerPosition()?.x || 0) / newScale.x) * newScale.x,
+            y: -(mousePointTo.y - (stage.getPointerPosition()?.y || 0) / newScale.y) * newScale.y,
+        }
+        stage.position(newPos)
+        stage.scale(newScale)
+        stage.batchDraw()
+    }
+}
+
+stage.addEventListener('wheel', handleZoomScaleEvent)
